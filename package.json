@@ -3,13 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate:sample": "tsx scripts/generate-sample-excel.ts",
+    "fix:employee-ids": "tsx scripts/fix-employee-ids.ts"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.1",
+    "exceljs": "^4.4.0",
+    "mongodb": "^7.0.0",
     "next": "16.1.0",
+    "prisma": "^6.19.1",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
@@ -18,9 +24,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.0",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

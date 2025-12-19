@@ -1,20 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { getEmployees, getMonthlySummary } from '@/actions/excel-processing'
+import { useState } from 'react'
 import { SummaryCard } from '@/components/summary-card'
 import { AttendanceTable } from '@/components/attendance-table'
 import { MonthlySelector } from '@/components/monthly-selector'
 import { EmployeeSelector } from '@/components/employee-selector'
-import { FileUpload } from '@/components/file-upload'
-import Link from 'next/link'
 
-interface Employee {
+export interface Employee {
   id: string
   name: string
 }
 
-interface MonthlyData {
+export interface MonthlyData {
   employeeId: string
   employeeName: string
   month: number
@@ -31,55 +28,46 @@ interface MonthlyData {
   }>
 }
 
-export default function Home() {
-  const [employees, setEmployees] = useState<Employee[]>([])
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null)
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
-  const [monthlyData, setMonthlyData] = useState<MonthlyData | null>(null)
-  const [loading, setLoading] = useState(true)
+interface DashboardProps {
+  initialEmployees: Employee[]
+  initialMonthlyData: MonthlyData | null
+  initialSelectedEmployeeId: string | null
+  initialMonth: number
+  initialYear: number
+}
+
+export function Dashboard({
+  initialEmployees,
+  initialMonthlyData,
+  initialSelectedEmployeeId,
+  initialMonth,
+  initialYear,
+}: DashboardProps) {
+  const [employees] = useState(initialEmployees)
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(initialSelectedEmployeeId)
+  const [selectedMonth, setSelectedMonth] = useState(initialMonth)
+  const [selectedYear, setSelectedYear] = useState(initialYear)
+  const [monthlyData, setMonthlyData] = useState<MonthlyData | null>(initialMonthlyData)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Load employees on mount
-  useEffect(() => {
-    loadEmployees()
-  }, [])
-
-  // Load monthly summary when employee, month, or year changes
-  useEffect(() => {
-    if (selectedEmployeeId) {
-      loadMonthlySummary()
-    } else {
-      setMonthlyData(null)
-    }
-  }, [selectedEmployeeId, selectedMonth, selectedYear])
-
-  const loadEmployees = async () => {
-    try {
-      const result = await getEmployees()
-      if (result.success && result.data) {
-        setEmployees(result.data)
-        if (result.data.length > 0 && !selectedEmployeeId) {
-          setSelectedEmployeeId(result.data[0].id)
-        }
-      }
-    } catch (err) {
-      console.error('Error loading employees:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadMonthlySummary = async () => {
+  const handleMonthChange = async (month: number, year: number) => {
     if (!selectedEmployeeId) return
-
+    
     setLoading(true)
     setError(null)
-
+    
     try {
-      const result = await getMonthlySummary(selectedEmployeeId, selectedMonth, selectedYear)
+      const response = await fetch(`/api/monthly-summary?employeeId=${selectedEmployeeId}&month=${month}&year=${year}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch monthly summary')
+      }
+      const result = await response.json()
+      
       if (result.success && result.data) {
         setMonthlyData(result.data)
+        setSelectedMonth(month)
+        setSelectedYear(year)
       } else {
         setError(result.message || 'No data found')
         setMonthlyData(null)
@@ -92,9 +80,35 @@ export default function Home() {
     }
   }
 
-  const handleMonthChange = (month: number, year: number) => {
-    setSelectedMonth(month)
-    setSelectedYear(year)
+  const handleEmployeeChange = async (employeeId: string) => {
+    setSelectedEmployeeId(employeeId)
+    
+    if (employeeId) {
+      setLoading(true)
+      setError(null)
+      
+      try {
+        const response = await fetch(`/api/monthly-summary?employeeId=${employeeId}&month=${selectedMonth}&year=${selectedYear}`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch monthly summary')
+        }
+        const result = await response.json()
+        
+        if (result.success && result.data) {
+          setMonthlyData(result.data)
+        } else {
+          setError(result.message || 'No data found')
+          setMonthlyData(null)
+        }
+      } catch (err) {
+        setError('Failed to load monthly summary')
+        setMonthlyData(null)
+      } finally {
+        setLoading(false)
+      }
+    } else {
+      setMonthlyData(null)
+    }
   }
 
   return (
@@ -110,18 +124,18 @@ export default function Home() {
 
         {/* Navigation */}
         <div className="mb-6 flex gap-4">
-          <Link
+          <a
             href="/"
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
             Dashboard
-          </Link>
-          <Link
+          </a>
+          <a
             href="/upload"
             className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
           >
             Upload Data
-          </Link>
+          </a>
         </div>
 
         {/* Filters */}
@@ -130,7 +144,7 @@ export default function Home() {
             <EmployeeSelector
               employees={employees}
               selectedEmployeeId={selectedEmployeeId}
-              onEmployeeChange={setSelectedEmployeeId}
+              onEmployeeChange={handleEmployeeChange}
             />
             <MonthlySelector
               selectedMonth={selectedMonth}
@@ -196,16 +210,6 @@ export default function Home() {
               <AttendanceTable records={monthlyData.dailyRecords} />
             </div>
           </>
-        )}
-
-        {/* Empty State */}
-        {!monthlyData && !loading && !error && selectedEmployeeId && (
-          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-            <p className="text-gray-600">No data available for the selected period.</p>
-            <p className="text-sm text-gray-500 mt-2">
-              Please upload attendance data for this employee and month.
-            </p>
-          </div>
         )}
       </div>
     </div>

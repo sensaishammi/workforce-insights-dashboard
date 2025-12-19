@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  employeeId String? @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("employees")
+}
+
+model AttendanceRecord {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  employeeId String   @db.ObjectId
+  date       DateTime
+  inTime     DateTime?
+  outTime    DateTime?
+  workedHours Float?  // in hours
+  status     String   // "present", "leave", "sunday"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@unique([employeeId, date])
+  @@map("attendance_records")
+}
+
+model ProcessedData {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  employeeId        String   @db.ObjectId
+  month             Int      // 1-12
+  year              Int
+  expectedHours     Float
+  actualWorkedHours Float
+  leavesUsed        Int
+  productivity      Float    // percentage
+  dailyRecords      Json     // Array of daily attendance data
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@unique([employeeId, month, year])
+  @@map("processed_data")
+}
