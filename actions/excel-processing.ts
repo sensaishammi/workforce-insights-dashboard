@@ -18,6 +18,7 @@ import { v4 as uuidv4 } from 'uuid'
 
 /**
  * Parse CSV content into rows
+ * Handles quoted fields, escaped quotes, and empty rows
  */
 function parseCSV(csvText: string): string[][] {
   const rows: string[][] = []
@@ -29,22 +30,39 @@ function parseCSV(csvText: string): string[][] {
     const row: string[] = []
     let currentField = ''
     let insideQuotes = false
+    let lastCharWasQuote = false
 
     for (let i = 0; i < line.length; i++) {
       const char = line[i]
 
       if (char === '"') {
-        insideQuotes = !insideQuotes
+        if (insideQuotes && line[i + 1] === '"') {
+          // Escaped quote (double quote)
+          currentField += '"'
+          i++ // Skip next quote
+        } else {
+          // Toggle quote state
+          insideQuotes = !insideQuotes
+        }
+        lastCharWasQuote = true
       } else if (char === ',' && !insideQuotes) {
+        // Field separator (only outside quotes)
         row.push(currentField.trim())
         currentField = ''
+        lastCharWasQuote = false
       } else {
         currentField += char
+        lastCharWasQuote = false
       }
     }
-
+    
+    // Add the last field
     row.push(currentField.trim())
-    rows.push(row)
+    
+    // Only add non-empty rows (at least one non-empty field)
+    if (row.some(field => field.length > 0)) {
+      rows.push(row)
+    }
   }
 
   return rows
@@ -148,15 +166,34 @@ export async function processExcelFile(formData: FormData) {
   const employeeMap = new Map<string, ProcessedExcelData>()
   const fileName = file.name.toLowerCase()
 
+  // Validate file type
+  if (!fileName.endsWith('.csv') && !fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+    return { 
+      success: false, 
+      message: 'Unsupported file type. Please upload an Excel (.xlsx, .xls) or CSV (.csv) file.' 
+    }
+  }
+
   if (fileName.endsWith('.csv')) {
     const text = await file.text()
     const rows = parseCSV(text)
 
-    for (let i = 1; i < rows.length; i++) {
-      const [name, date, inTime, outTime] = rows[i]
-      processRow(name, date, inTime, outTime, employeeMap)
+    if (rows.length <= 1) {
+      // Only header row or empty file
+      return { success: false, message: 'CSV file is empty or contains only headers' }
     }
-  } else {
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i]
+      if (!row || row.length < 2) {
+        // Skip rows with insufficient data
+        continue
+      }
+      
+      const [name, date, inTime, outTime] = row
+      processRow(name || '', date || '', inTime || '', outTime || '', employeeMap)
+    }
+  } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
     const buffer = await file.arrayBuffer()
     const workbook = new ExcelJS.Workbook()
     await workbook.xlsx.load(buffer)
@@ -182,12 +219,24 @@ export async function processExcelFile(formData: FormData) {
 
       processRow(employeeName, date, inTime, outTime, employeeMap)
     })
+  } else {
+    return { 
+      success: false, 
+      message: 'Unsupported file type. Please upload an Excel (.xlsx, .xls) or CSV (.csv) file.' 
+    }
+  }
+
+  if (employeeMap.size === 0) {
+    return { 
+      success: false, 
+      message: 'No valid data found in file. Please ensure the file contains employee attendance records.' 
+    }
   }
 
   return {
     success: true,
     data: Array.from(employeeMap.values()),
-    message: 'File processed successfully',
+    message: `Processed ${employeeMap.size} employee(s) with ${Array.from(employeeMap.values()).reduce((sum, emp) => sum + emp.records.length, 0)} attendance records`,
   }
 }
 
