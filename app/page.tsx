@@ -43,7 +43,22 @@ export default function Home() {
     }
     return 2024 // Default to 2024 if outside range
   }
-  const [selectedYear, setSelectedYear] = useState(getDefaultYear())
+  const [selectedYear, setSelectedYear] = useState(() => {
+    const defaultYear = getDefaultYear()
+    // Ensure it's within valid range
+    if (defaultYear < 2023) return 2023
+    if (defaultYear > 2025) return 2025
+    return defaultYear
+  })
+  
+  // Ensure selectedYear stays within valid range
+  useEffect(() => {
+    if (selectedYear < 2023) {
+      setSelectedYear(2023)
+    } else if (selectedYear > 2025) {
+      setSelectedYear(2025)
+    }
+  }, [selectedYear])
   const [monthlyData, setMonthlyData] = useState<MonthlyData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

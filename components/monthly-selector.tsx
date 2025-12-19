@@ -64,7 +64,7 @@ export function MonthlySelector({
         </label>
         <select
           id="year"
-          value={selectedYear}
+          value={selectedYear > 2025 ? 2025 : selectedYear < 2023 ? 2023 : selectedYear}
           onChange={handleYearChange}
           className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
         >
