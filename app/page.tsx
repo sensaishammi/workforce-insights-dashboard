@@ -51,27 +51,50 @@ export default function Home() {
       loadMonthlySummary()
     } else {
       setMonthlyData(null)
+      setError(null)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEmployeeId, selectedMonth, selectedYear])
 
   const loadEmployees = async () => {
+    setLoading(true)
     try {
       const result = await getEmployees()
       if (result.success && result.data) {
         setEmployees(result.data)
-        if (result.data.length > 0 && !selectedEmployeeId) {
-          setSelectedEmployeeId(result.data[0].id)
+        // Auto-select first employee if available and none selected
+        if (result.data.length > 0) {
+          // Always set the first employee if none is selected
+          // This ensures data loads after upload
+          const firstEmployeeId = result.data[0].id
+          if (!selectedEmployeeId || !result.data.find(e => e.id === selectedEmployeeId)) {
+            setSelectedEmployeeId(firstEmployeeId)
+          }
+        } else {
+          // No employees, clear selection
+          setSelectedEmployeeId(null)
+          setMonthlyData(null)
         }
+      } else {
+        setEmployees([])
+        setSelectedEmployeeId(null)
+        setMonthlyData(null)
       }
     } catch (err) {
       console.error('Error loading employees:', err)
+      setEmployees([])
+      setSelectedEmployeeId(null)
     } finally {
       setLoading(false)
     }
   }
 
   const loadMonthlySummary = async () => {
-    if (!selectedEmployeeId) return
+    if (!selectedEmployeeId) {
+      setMonthlyData(null)
+      setError(null)
+      return
+    }
 
     setLoading(true)
     setError(null)
@@ -80,11 +103,19 @@ export default function Home() {
       const result = await getMonthlySummary(selectedEmployeeId, selectedMonth, selectedYear)
       if (result.success && result.data) {
         setMonthlyData(result.data)
+        setError(null)
       } else {
-        setError(result.message || 'No data found')
+        // No data for this month/year is not necessarily an error
+        // Only show error if it's a real error, not just "no data found"
+        if (result.message && !result.message.includes('No data found')) {
+          setError(result.message)
+        } else {
+          setError(null) // Clear error for "no data" case
+        }
         setMonthlyData(null)
       }
     } catch (err) {
+      console.error('Error loading monthly summary:', err)
       setError('Failed to load monthly summary')
       setMonthlyData(null)
     } finally {
@@ -124,21 +155,57 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <EmployeeSelector
-              employees={employees}
-              selectedEmployeeId={selectedEmployeeId}
-              onEmployeeChange={setSelectedEmployeeId}
-            />
-            <MonthlySelector
-              selectedMonth={selectedMonth}
-              selectedYear={selectedYear}
-              onMonthChange={handleMonthChange}
-            />
+        {/* Empty State - No Employees */}
+        {!loading && employees.length === 0 && (
+          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center mb-6">
+            <div className="max-w-md mx-auto">
+              <svg
+                className="mx-auto h-12 w-12 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+              <h3 className="mt-4 text-lg font-semibold text-gray-900">No Employees Found</h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Get started by uploading an Excel file with attendance data.
+              </p>
+              <div className="mt-6">
+                <Link
+                  href="/upload"
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Upload Attendance Data
+                </Link>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Filters - Only show when employees exist */}
+        {employees.length > 0 && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <EmployeeSelector
+                employees={employees}
+                selectedEmployeeId={selectedEmployeeId}
+                onEmployeeChange={setSelectedEmployeeId}
+              />
+              <MonthlySelector
+                selectedMonth={selectedMonth}
+                selectedYear={selectedYear}
+                onMonthChange={handleMonthChange}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Loading State */}
         {loading && (
@@ -149,7 +216,7 @@ export default function Home() {
         )}
 
         {/* Error State */}
-        {error && !loading && (
+        {error && !loading && employees.length > 0 && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
             <p className="text-sm text-yellow-800">{error}</p>
           </div>
@@ -198,13 +265,40 @@ export default function Home() {
           </>
         )}
 
-        {/* Empty State */}
-        {!monthlyData && !loading && !error && selectedEmployeeId && (
+        {/* Empty State - No monthly data but employee selected */}
+        {!monthlyData && !loading && !error && selectedEmployeeId && employees.length > 0 && (
           <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-            <p className="text-gray-600">No data available for the selected period.</p>
-            <p className="text-sm text-gray-500 mt-2">
-              Please upload attendance data for this employee and month.
-            </p>
+            <div className="max-w-md mx-auto">
+              <svg
+                className="mx-auto h-12 w-12 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              <h3 className="mt-4 text-lg font-semibold text-gray-900">No Data for Selected Period</h3>
+              <p className="mt-2 text-sm text-gray-600">
+                No attendance data found for <strong>{employees.find(e => e.id === selectedEmployeeId)?.name || 'this employee'}</strong> in <strong>{new Date(selectedYear, selectedMonth - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</strong>.
+              </p>
+              <p className="mt-1 text-sm text-gray-500">
+                Try selecting a different month/year from the dropdown above, or upload data for this period.
+              </p>
+              <div className="mt-6 flex gap-3 justify-center">
+                <Link
+                  href="/upload"
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Upload More Data
+                </Link>
+              </div>
+            </div>
           </div>
         )}
       </div>

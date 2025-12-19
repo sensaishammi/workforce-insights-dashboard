@@ -60,9 +60,9 @@ export function FileUpload() {
           fileInput.value = ''
         }
 
-        // Reload page after 2 seconds to show updated data
+        // Redirect to dashboard after 2 seconds to show updated data
         setTimeout(() => {
-          window.location.reload()
+          window.location.href = '/'
         }, 2000)
       } catch (error) {
         console.error('Upload error:', error)
