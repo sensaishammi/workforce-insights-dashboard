@@ -90,7 +90,7 @@ export default function Home() {
           // Always set the first employee if none is selected
           // This ensures data loads after upload
           const firstEmployeeId = result.data[0].id
-          if (!selectedEmployeeId || !result.data.find(e => e.id === selectedEmployeeId)) {
+          if (!selectedEmployeeId || !result.data.find((e: Employee) => e.id === selectedEmployeeId)) {
             setSelectedEmployeeId(firstEmployeeId)
           }
         } else {
