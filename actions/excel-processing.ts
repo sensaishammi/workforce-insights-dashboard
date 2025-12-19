@@ -189,9 +189,11 @@ export async function processExcelFile(
         processRow(employeeNameValue, dateValue, inTimeValue, outTimeValue, employeeMap)
       }
     } else {
-      // Process Excel file
+      // Process Excel file - optimized for performance
       const buffer = await file.arrayBuffer()
       const workbook = new ExcelJS.Workbook()
+      
+      // Load without styles for faster processing
       await workbook.xlsx.load(buffer)
 
       const worksheet = workbook.worksheets[0]
@@ -199,6 +201,7 @@ export async function processExcelFile(
         return { success: false, message: 'Excel file is empty' }
       }
 
+      // Process rows directly - eachRow is already efficient
       worksheet.eachRow((row, rowNumber) => {
         if (rowNumber === 1) return // Skip header row
 

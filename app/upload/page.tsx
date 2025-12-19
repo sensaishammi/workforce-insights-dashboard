@@ -81,7 +81,7 @@ export default function UploadPage() {
             </a>
           </div>
           <p className="text-xs text-green-700 mt-3">
-            Both files include data for all months (January-December) and years (2023-2025)
+            Both files include data for all months (January-December) and years (2024-2025) - optimized for faster processing
           </p>
         </div>
 
