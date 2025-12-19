@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "generate:sample": "tsx scripts/generate-sample-excel.ts",
+    "generate:sample-csv": "tsx scripts/generate-sample-csv.ts",
     "fix:employee-ids": "tsx scripts/fix-employee-ids.ts",
     "clear:database": "tsx scripts/clear-database.ts"
   },
