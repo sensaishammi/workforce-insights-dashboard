@@ -34,32 +34,54 @@ export default function UploadPage() {
 
         {/* Sample File Download */}
         <div className="mt-8 bg-green-50 border border-green-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-green-900 mb-2">Sample File</h3>
+          <h3 className="text-lg font-semibold text-green-900 mb-2">Sample Files</h3>
           <p className="text-sm text-green-800 mb-4">
-            Download a sample Excel file (.xlsx) to see the expected format:
+            Download sample files to see the expected format:
           </p>
-          <a
-            href="/sample-attendance.xlsx"
-            download
-            className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-          >
-            <svg
-              className="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex gap-3 flex-wrap">
+            <a
+              href="/sample-attendance.xlsx"
+              download
+              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            Download Sample Excel
-          </a>
+              <svg
+                className="w-5 h-5 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              Download Sample Excel
+            </a>
+            <a
+              href="/sample-attendance.csv"
+              download
+              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              <svg
+                className="w-5 h-5 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              Download Sample CSV
+            </a>
+          </div>
           <p className="text-xs text-green-700 mt-3">
-            Excel file includes data for all months (January-December) and years (2023-2025)
+            Both files include data for all months (January-December) and years (2023-2025)
           </p>
         </div>
 
