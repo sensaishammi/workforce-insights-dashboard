@@ -16,7 +16,133 @@ import {
 import type { ProcessedExcelData } from '@/lib/types'
 
 /**
- * Process uploaded Excel file and extract attendance data
+ * Parse CSV content into rows
+ */
+function parseCSV(csvText: string): string[][] {
+  const rows: string[][] = []
+  const lines = csvText.split('\n')
+  
+  for (const line of lines) {
+    if (!line.trim()) continue
+    
+    // Simple CSV parser - handles quoted fields
+    const row: string[] = []
+    let currentField = ''
+    let insideQuotes = false
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i]
+      
+      if (char === '"') {
+        insideQuotes = !insideQuotes
+      } else if (char === ',' && !insideQuotes) {
+        row.push(currentField.trim())
+        currentField = ''
+      } else {
+        currentField += char
+      }
+    }
+    
+    // Add the last field
+    row.push(currentField.trim())
+    rows.push(row)
+  }
+  
+  return rows
+}
+
+/**
+ * Process a single row of data (used by both Excel and CSV processing)
+ */
+function processRow(
+  employeeNameValue: string | number | Date | null | undefined,
+  dateValue: string | number | Date | null | undefined,
+  inTimeValue: string | number | Date | null | undefined,
+  outTimeValue: string | number | Date | null | undefined,
+  employeeMap: Map<string, ProcessedExcelData>
+): void {
+  try {
+    // Validate required fields
+    if (!employeeNameValue || !dateValue) {
+      return // Skip invalid rows
+    }
+
+    // Skip if value types are not supported
+    if (
+      typeof employeeNameValue === 'boolean' ||
+      typeof dateValue === 'boolean' ||
+      (inTimeValue && typeof inTimeValue === 'boolean') ||
+      (outTimeValue && typeof outTimeValue === 'boolean')
+    ) {
+      return // Skip rows with boolean values
+    }
+
+    const employeeName = String(employeeNameValue).trim()
+    if (!employeeName) {
+      return
+    }
+
+    // Parse date - only accept string, number, or Date
+    const dateParsed =
+      typeof dateValue === 'string' || typeof dateValue === 'number' || dateValue instanceof Date
+        ? parseExcelDate(dateValue)
+        : null
+
+    if (!dateParsed) {
+      return // Skip rows with invalid dates
+    }
+
+    // Normalize date to start of day (remove time component)
+    const date = new Date(dateParsed.getFullYear(), dateParsed.getMonth(), dateParsed.getDate())
+
+    // Parse times
+    let inTime: Date | null = null
+    let outTime: Date | null = null
+
+    if (inTimeValue && (typeof inTimeValue === 'string' || typeof inTimeValue === 'number' || inTimeValue instanceof Date)) {
+      const parsedInTime = parseExcelTime(inTimeValue)
+      if (parsedInTime) {
+        inTime = combineDateAndTime(date, parsedInTime)
+      }
+    }
+
+    if (outTimeValue && (typeof outTimeValue === 'string' || typeof outTimeValue === 'number' || outTimeValue instanceof Date)) {
+      const parsedOutTime = parseExcelTime(outTimeValue)
+      if (parsedOutTime) {
+        outTime = combineDateAndTime(date, parsedOutTime)
+      }
+    }
+
+    // Calculate worked hours
+    const workedHours = calculateWorkedHours(inTime, outTime)
+    const status = getAttendanceStatus(date, workedHours)
+
+    // Get or create employee data structure
+    let employeeData = employeeMap.get(employeeName)
+    if (!employeeData) {
+      employeeData = {
+        employeeId: '', // Will be set after employee creation
+        employeeName,
+        records: [],
+      }
+      employeeMap.set(employeeName, employeeData)
+    }
+
+    employeeData.records.push({
+      date,
+      inTime,
+      outTime,
+      workedHours,
+      status,
+    })
+  } catch (error) {
+    // Skip rows that cause errors
+    console.error('Error processing row:', error)
+  }
+}
+
+/**
+ * Process uploaded file (Excel or CSV) and extract attendance data
  */
 export async function processExcelFile(
   formData: FormData
@@ -28,120 +154,71 @@ export async function processExcelFile(
   try {
     const file = formData.get('file') as File | null
     if (!file || !(file instanceof File)) {
-      return { success: false, message: 'No file provided. Please select an Excel file.' }
+      return { success: false, message: 'No file provided. Please select a file.' }
     }
     
-    const buffer = await file.arrayBuffer()
-    const workbook = new ExcelJS.Workbook()
-    await workbook.xlsx.load(buffer)
-
-    const worksheet = workbook.worksheets[0]
-    if (!worksheet) {
-      return { success: false, message: 'Excel file is empty' }
+    const fileName = file.name.toLowerCase()
+    const isCSV = fileName.endsWith('.csv')
+    const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls')
+    
+    if (!isCSV && !isExcel) {
+      return { success: false, message: 'Unsupported file format. Please upload Excel (.xlsx, .xls) or CSV (.csv) file.' }
     }
 
-    const rows: ProcessedExcelData[] = []
     const employeeMap = new Map<string, ProcessedExcelData>()
 
-    // Skip header row (assuming first row is headers)
-    let rowIndex = 2 // Start from row 2 (1-indexed, but we'll iterate)
+    if (isCSV) {
+      // Process CSV file
+      const text = await file.text()
+      const rows = parseCSV(text)
+      
+      if (rows.length === 0) {
+        return { success: false, message: 'CSV file is empty' }
+      }
 
-    worksheet.eachRow((row, rowNumber) => {
-      if (rowNumber === 1) return // Skip header row
+      // Skip header row (first row)
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i]
+        if (row.length < 2) continue // Skip rows with insufficient columns
+        
+        const employeeNameValue = row[0] || ''
+        const dateValue = row[1] || ''
+        const inTimeValue = row[2] || ''
+        const outTimeValue = row[3] || ''
+        
+        processRow(employeeNameValue, dateValue, inTimeValue, outTimeValue, employeeMap)
+      }
+    } else {
+      // Process Excel file
+      const buffer = await file.arrayBuffer()
+      const workbook = new ExcelJS.Workbook()
+      await workbook.xlsx.load(buffer)
 
-      try {
+      const worksheet = workbook.worksheets[0]
+      if (!worksheet) {
+        return { success: false, message: 'Excel file is empty' }
+      }
+
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return // Skip header row
+
         const employeeNameCell = row.getCell(1)
         const dateCell = row.getCell(2)
         const inTimeCell = row.getCell(3)
         const outTimeCell = row.getCell(4)
 
-        // Validate required cells
-        if (!employeeNameCell.value || !dateCell.value) {
-          return // Skip invalid rows
-        }
-
-        // Extract cell values safely
-        const employeeNameValue = employeeNameCell.value
-        const dateValue = dateCell.value
-        const inTimeValue = inTimeCell.value
-        const outTimeValue = outTimeCell.value
-
-        // Skip if value types are not supported
-        if (
-          typeof employeeNameValue === 'boolean' ||
-          typeof dateValue === 'boolean' ||
-          (inTimeValue && typeof inTimeValue === 'boolean') ||
-          (outTimeValue && typeof outTimeValue === 'boolean')
-        ) {
-          return // Skip rows with boolean values
-        }
-
-        const employeeName = String(employeeNameValue).trim()
-        if (!employeeName) {
-          return
-        }
-
-        // Parse date - only accept string, number, or Date
-        const dateParsed =
-          typeof dateValue === 'string' || typeof dateValue === 'number' || dateValue instanceof Date
-            ? parseExcelDate(dateValue)
-            : null
-
-        if (!dateParsed) {
-          return // Skip rows with invalid dates
-        }
-
-        // Normalize date to start of day (remove time component)
-        const date = new Date(dateParsed.getFullYear(), dateParsed.getMonth(), dateParsed.getDate())
-
-        // Parse times
-        let inTime: Date | null = null
-        let outTime: Date | null = null
-
-        if (inTimeValue && (typeof inTimeValue === 'string' || typeof inTimeValue === 'number' || inTimeValue instanceof Date)) {
-          const parsedInTime = parseExcelTime(inTimeValue)
-          if (parsedInTime) {
-            inTime = combineDateAndTime(date, parsedInTime)
-          }
-        }
-
-        if (outTimeValue && (typeof outTimeValue === 'string' || typeof outTimeValue === 'number' || outTimeValue instanceof Date)) {
-          const parsedOutTime = parseExcelTime(outTimeValue)
-          if (parsedOutTime) {
-            outTime = combineDateAndTime(date, parsedOutTime)
-          }
-        }
-
-        // Calculate worked hours
-        const workedHours = calculateWorkedHours(inTime, outTime)
-        const status = getAttendanceStatus(date, workedHours)
-
-        // Get or create employee data structure
-        let employeeData = employeeMap.get(employeeName)
-        if (!employeeData) {
-          employeeData = {
-            employeeId: '', // Will be set after employee creation
-            employeeName,
-            records: [],
-          }
-          employeeMap.set(employeeName, employeeData)
-        }
-
-        employeeData.records.push({
-          date,
-          inTime,
-          outTime,
-          workedHours,
-          status,
-        })
-      } catch (error) {
-        // Skip rows that cause errors
-        console.error(`Error processing row ${rowNumber}:`, error)
-      }
-    })
+        processRow(
+          employeeNameCell.value,
+          dateCell.value,
+          inTimeCell.value,
+          outTimeCell.value,
+          employeeMap
+        )
+      })
+    }
 
     if (employeeMap.size === 0) {
-      return { success: false, message: 'No valid data found in Excel file' }
+      return { success: false, message: 'No valid data found in file' }
     }
 
     // Convert map to array
@@ -153,11 +230,11 @@ export async function processExcelFile(
       data: processedData,
     }
   } catch (error) {
-    console.error('Error processing Excel file:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Failed to process Excel file'
+    console.error('Error processing file:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Failed to process file'
     return {
       success: false,
-      message: `Error processing file: ${errorMessage}. Please ensure the file is a valid Excel file (.xlsx or .xls)`,
+      message: `Error processing file: ${errorMessage}. Please ensure the file is a valid Excel (.xlsx, .xls) or CSV (.csv) file.`,
     }
   }
 }

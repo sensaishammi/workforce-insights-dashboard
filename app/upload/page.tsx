@@ -9,7 +9,7 @@ export default function UploadPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Upload Attendance Data</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Upload an Excel file (.xlsx) with employee attendance data
+            Upload an Excel file (.xlsx, .xls) or CSV file (.csv) with employee attendance data
           </p>
         </div>
 
@@ -65,9 +65,9 @@ export default function UploadPage() {
 
         {/* Instructions */}
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-3">Excel File Format</h3>
+          <h3 className="text-lg font-semibold text-blue-900 mb-3">File Format</h3>
           <p className="text-sm text-blue-800 mb-3">
-            Your Excel file should have the following columns (in order):
+            Your Excel or CSV file should have the following columns (in order):
           </p>
           <ol className="list-decimal list-inside text-sm text-blue-800 space-y-1">
             <li>

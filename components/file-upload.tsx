@@ -11,11 +11,15 @@ export function FileUpload() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (selectedFile) {
-      if (selectedFile.name.endsWith('.xlsx') || selectedFile.name.endsWith('.xls')) {
+      if (
+        selectedFile.name.endsWith('.xlsx') || 
+        selectedFile.name.endsWith('.xls') || 
+        selectedFile.name.endsWith('.csv')
+      ) {
         setFile(selectedFile)
         setMessage(null)
       } else {
-        setMessage({ type: 'error', text: 'Please select an Excel file (.xlsx or .xls)' })
+        setMessage({ type: 'error', text: 'Please select an Excel file (.xlsx, .xls) or CSV file (.csv)' })
       }
     }
   }
@@ -81,12 +85,12 @@ export function FileUpload() {
       <div className="space-y-4">
         <div>
           <label htmlFor="excel-file" className="block text-sm font-medium text-gray-700 mb-2">
-            Select Excel File (.xlsx)
+            Select File (.xlsx, .xls, or .csv)
           </label>
           <input
             id="excel-file"
             type="file"
-            accept=".xlsx,.xls"
+            accept=".xlsx,.xls,.csv"
             onChange={handleFileChange}
             disabled={isPending}
             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
