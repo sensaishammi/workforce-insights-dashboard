@@ -35,7 +35,15 @@ export default function Home() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null)
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  // Default to current year if between 2023-2025, otherwise use 2024
+  const getDefaultYear = () => {
+    const currentYear = new Date().getFullYear()
+    if (currentYear >= 2023 && currentYear <= 2025) {
+      return currentYear
+    }
+    return 2024 // Default to 2024 if outside range
+  }
+  const [selectedYear, setSelectedYear] = useState(getDefaultYear())
   const [monthlyData, setMonthlyData] = useState<MonthlyData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

@@ -26,8 +26,8 @@ export function MonthlySelector({
     'December',
   ]
 
-  const currentYear = new Date().getFullYear()
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i)
+  // Show only 2023, 2024, 2025
+  const years = [2023, 2024, 2025]
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const month = parseInt(e.target.value, 10)
