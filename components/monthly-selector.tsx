@@ -40,16 +40,16 @@ export function MonthlySelector({
   }
 
   return (
-    <div className="flex gap-4 items-center">
-      <div>
-        <label htmlFor="month" className="block text-sm font-medium text-gray-700 mb-1">
+    <div className="flex gap-4 items-end">
+      <div className="flex-1">
+        <label htmlFor="month" className="block text-sm font-semibold text-slate-700 mb-2">
           Month
         </label>
         <select
           id="month"
           value={selectedMonth}
           onChange={handleMonthChange}
-          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+          className="block w-full rounded-lg border-slate-300/60 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:text-sm px-4 py-2.5 border bg-white/80 backdrop-blur-sm text-slate-900 transition-all duration-200 hover:border-slate-400"
         >
           {months.map((month, index) => (
             <option key={month} value={index + 1}>
@@ -58,15 +58,15 @@ export function MonthlySelector({
           ))}
         </select>
       </div>
-      <div>
-        <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">
+      <div className="flex-1">
+        <label htmlFor="year" className="block text-sm font-semibold text-slate-700 mb-2">
           Year
         </label>
         <select
           id="year"
           value={selectedYear > 2025 ? 2025 : selectedYear < 2023 ? 2023 : selectedYear}
           onChange={handleYearChange}
-          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+          className="block w-full rounded-lg border-slate-300/60 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:text-sm px-4 py-2.5 border bg-white/80 backdrop-blur-sm text-slate-900 transition-all duration-200 hover:border-slate-400"
         >
           {years.map((year) => (
             <option key={year} value={year}>

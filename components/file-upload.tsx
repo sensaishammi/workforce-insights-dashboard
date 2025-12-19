@@ -79,12 +79,15 @@ export function FileUpload() {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Upload Attendance Data</h2>
+    <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 shadow-sm p-6">
+      <h2 className="text-xl font-semibold text-slate-900 mb-6 flex items-center gap-2">
+        <span className="w-1 h-6 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full"></span>
+        Upload Attendance Data
+      </h2>
       
-      <div className="space-y-4">
+      <div className="space-y-5">
         <div>
-          <label htmlFor="excel-file" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="excel-file" className="block text-sm font-semibold text-slate-700 mb-2">
             Select File (.xlsx, .xls, or .csv)
           </label>
           <input
@@ -93,38 +96,59 @@ export function FileUpload() {
             accept=".xlsx,.xls,.csv"
             onChange={handleFileChange}
             disabled={isPending}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            className="block w-full text-sm text-slate-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gradient-to-r file:from-blue-50 file:to-indigo-50 file:text-blue-700 hover:file:from-blue-100 hover:file:to-indigo-100 file:transition-all file:duration-200 file:shadow-sm file:hover:shadow"
           />
-          <p className="mt-2 text-xs text-gray-500">
+          <p className="mt-2 text-xs text-slate-500">
             Expected format: Employee Name/ID | Date | In-Time | Out-Time
           </p>
         </div>
 
         {file && (
-          <div className="text-sm text-gray-600">
-            Selected: <span className="font-medium">{file.name}</span> (
+          <div className="text-sm text-slate-600 bg-slate-50/80 rounded-lg p-3 border border-slate-200/60">
+            Selected: <span className="font-semibold text-slate-900">{file.name}</span> (
             {(file.size / 1024).toFixed(2)} KB)
           </div>
         )}
 
         {message && (
           <div
-            className={`p-3 rounded-md text-sm ${
+            className={`p-4 rounded-xl text-sm border ${
               message.type === 'success'
-                ? 'bg-green-50 text-green-800'
-                : 'bg-red-50 text-red-800'
-            }`}
+                ? 'bg-emerald-50/80 text-emerald-800 border-emerald-200/60'
+                : 'bg-rose-50/80 text-rose-800 border-rose-200/60'
+            } backdrop-blur-sm shadow-sm`}
           >
-            {message.text}
+            <div className="flex items-center gap-2">
+              {message.type === 'success' ? (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
+              {message.text}
+            </div>
           </div>
         )}
 
         <button
           onClick={handleUpload}
           disabled={!file || isPending}
-          className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-3 rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm disabled:shadow-none"
         >
-          {isPending ? 'Processing...' : 'Upload & Process'}
+          {isPending ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Processing...
+            </span>
+          ) : (
+            'Upload & Process'
+          )}
         </button>
       </div>
     </div>

@@ -26,14 +26,14 @@ export function EmployeeSelector({
 
   return (
     <div>
-      <label htmlFor="employee" className="block text-sm font-medium text-gray-700 mb-1">
+      <label htmlFor="employee" className="block text-sm font-semibold text-slate-700 mb-2">
         Employee
       </label>
       <select
         id="employee"
         value={selectedEmployeeId || ''}
         onChange={(e) => onEmployeeChange(e.target.value)}
-        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+        className="block w-full rounded-lg border-slate-300/60 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:text-sm px-4 py-2.5 border bg-white/80 backdrop-blur-sm text-slate-900 transition-all duration-200 hover:border-slate-400"
       >
         <option value="">Select an employee</option>
         {employees.map((employee) => (
