@@ -36,10 +36,10 @@ export default function UploadPage() {
         <div className="mt-8 bg-green-50 border border-green-200 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-green-900 mb-2">Sample File</h3>
           <p className="text-sm text-green-800 mb-4">
-            Download a sample CSV file to see the expected format:
+            Download a sample Excel file (.xlsx) to see the expected format:
           </p>
           <a
-            href="/sample-attendance.csv"
+            href="/sample-attendance.xlsx"
             download
             className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
           >
@@ -56,10 +56,10 @@ export default function UploadPage() {
                 d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
-            Download Sample CSV
+            Download Sample Excel
           </a>
           <p className="text-xs text-green-700 mt-3">
-            CSV file includes data for all months (January-December) and years (2023-2025)
+            Excel file includes data for all months (January-December) and years (2023-2025)
           </p>
         </div>
 
