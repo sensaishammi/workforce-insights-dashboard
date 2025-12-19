@@ -8,12 +8,12 @@ import * as path from 'path'
 
 const employees = [
   'John Smith',
-  'Sarah Johnson',
-  'Michael Chen'
+  'Sarah Johnson'
 ]
 
-const years = [2024, 2025]
+const year = 2024
 const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+const totalRecords = 100
 
 function getDayOfWeek(date: Date): number {
   return date.getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
@@ -32,8 +32,6 @@ function formatTime(hours: number, minutes: number): string {
 
 function generateAttendanceRecord(employee: string, date: Date): string[] {
   const dayOfWeek = getDayOfWeek(date)
-  const day = date.getDate()
-  const month = date.getMonth() + 1
   
   // Sunday - no attendance
   if (dayOfWeek === 0) {
@@ -97,19 +95,56 @@ function generateCSV(): string {
   // Header
   rows.push('Employee Name,Date,In-Time,Out-Time')
   
-  // Generate data for each employee and year
-  for (const employee of employees) {
-    for (const year of years) {
-      for (const month of months) {
-        const daysInMonth = new Date(year, month, 0).getDate()
-        
-        for (let day = 1; day <= daysInMonth; day++) {
-          const date = new Date(year, month - 1, day)
-          const record = generateAttendanceRecord(employee, date)
-          rows.push(record.join(','))
-        }
+  // Generate exactly 100 records distributed across all 12 months
+  const recordsPerMonth = Math.floor(totalRecords / months.length) // ~8 records per month
+  const remainder = totalRecords % months.length // Extra records to distribute
+  
+  let recordCount = 0
+  
+  for (const month of months) {
+    // Calculate how many records for this month
+    let recordsThisMonth = recordsPerMonth
+    if (month <= remainder) {
+      recordsThisMonth++ // Distribute remainder across first few months
+    }
+    
+    const daysInMonth = new Date(year, month, 0).getDate()
+    const employeeIndex = month % employees.length
+    const employee = employees[employeeIndex]
+    
+    // Select specific days in the month to ensure we get exactly the right count
+    // Prefer weekdays (Monday-Friday) for better data quality
+    const selectedDays: number[] = []
+    
+    for (let day = 1; day <= daysInMonth && selectedDays.length < recordsThisMonth; day++) {
+      const date = new Date(year, month - 1, day)
+      const dayOfWeek = date.getDay()
+      
+      // Prefer weekdays, but include some weekends if needed
+      if (dayOfWeek !== 0) { // Not Sunday
+        selectedDays.push(day)
       }
     }
+    
+    // If we still need more days, add Sundays (as leave records)
+    for (let day = 1; day <= daysInMonth && selectedDays.length < recordsThisMonth; day++) {
+      const date = new Date(year, month - 1, day)
+      if (date.getDay() === 0 && !selectedDays.includes(day)) {
+        selectedDays.push(day)
+      }
+    }
+    
+    // Generate records for selected days
+    for (const day of selectedDays.slice(0, recordsThisMonth)) {
+      if (recordCount >= totalRecords) break
+      
+      const date = new Date(year, month - 1, day)
+      const record = generateAttendanceRecord(employee, date)
+      rows.push(record.join(','))
+      recordCount++
+    }
+    
+    if (recordCount >= totalRecords) break
   }
   
   return rows.join('\n')
@@ -121,8 +156,10 @@ const outputPath = path.join(process.cwd(), 'public', 'sample-attendance.csv')
 
 fs.writeFileSync(outputPath, csvContent, 'utf-8')
 
+const recordCount = csvContent.split('\n').length - 1
 console.log(`✅ Generated sample CSV file: ${outputPath}`)
-console.log(`📊 Total records: ${csvContent.split('\n').length - 1} (excluding header)`)
+console.log(`📊 Total records: ${recordCount} (excluding header)`)
 console.log(`👥 Employees: ${employees.length}`)
-console.log(`📅 Years: ${years.join(', ')}`)
+console.log(`📅 Year: ${year}`)
+console.log(`📅 Months: All 12 months (January-December)`)
 
