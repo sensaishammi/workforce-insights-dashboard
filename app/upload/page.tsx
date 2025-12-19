@@ -40,8 +40,8 @@ export default function UploadPage() {
           </p>
           <div className="flex gap-3 flex-wrap">
             <a
-              href="/sample-attendance.xlsx"
-              download
+              href="/sample-attendance.xlsx?v=2"
+              download="sample-attendance.xlsx"
               className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
             >
               <svg
