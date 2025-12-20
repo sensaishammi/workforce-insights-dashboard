@@ -342,6 +342,13 @@ export default function Home() {
           </div>
         )}
       </div>
+      
+      {/* Copyright Notice */}
+      <div className="mt-12 pt-8 border-t border-slate-200/60">
+        <p className="text-center text-xs text-slate-500 font-light">
+          © sensaishammi
+        </p>
+      </div>
     </div>
   )
 }
